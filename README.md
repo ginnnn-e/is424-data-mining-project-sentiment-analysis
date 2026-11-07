@@ -127,6 +127,30 @@ The **final sentiment model used** to generate the `Weighted Sentiment Score` fe
    $$\text{Weighted Sentiment Score}_{s,t} = \frac{\sum_{i \in D_{s,t}} w_{\text{Type}(i)} \cdot \text{Sentiment\_Score}_i}{\sum_{i \in D_{s,t}} w_{\text{Type}(i)}}$$
 5. **Downstream Feature Integration:** The resulting daily series (`news_sentiment_finbert_tone_weighted_{stock}.csv`, **9,135 total stock-date rows**) is merged by `Date` directly into [`training/data/{STOCK}_data_model_training.csv`](https://github.com/HengZhengKai/is424-data-mining-project/tree/main/training/data) as the **`Weighted Sentiment Score`** feature alongside `Close` price and the 10 technical indicator combinations (`Combi 1` – `Combi 10`).
 
+#### Sample `FinBERT-Tone` Predictions (Actual Model Outputs)
+
+**1. Row-Level Softmax Probabilities & Continuous Polarity Scores** (from [`financial-news-sentiment-analysis-finbert tone.ipynb`](https://github.com/HengZhengKai/is424-data-mining-project/blob/main/financial-news-sentiment-analysis-finbert%20tone.ipynb) & [`combine_sentiment_scores_per_date.ipynb`](https://github.com/HengZhengKai/is424-data-mining-project/blob/main/combine_sentiment_scores_per_date.ipynb)):
+
+| Date | Stock | Type | Text (`Content`) | `Positive_Sentiment` | `Neutral_Sentiment` | `Negative_Sentiment` | `Sentiment_Score` ($P_{\text{pos}} - P_{\text{neg}}$) |
+| :--- | :---: | :---: | :--- | :---: | :---: | :---: | :---: |
+| `2020-01-02` | `AAPL` | Social Media | `"$AAPL $295 open."` | `0.999999` | `0.000001` | `0.000001` | **`+0.999998`** |
+| `2020-01-02` | `AAPL` | Social Media | `"$AAPL $300 incoming"` | `0.999919` | `0.000059` | `0.000022` | **`+0.999897`** |
+| `2020-01-01` | `AAPL` | Social Media | `"$AAPL $DIS I think I nailed this for 2019🤑"` | `0.999434` | `0.000009` | `0.000558` | **`+0.998876`** |
+| `2020-01-02` | `AAPL` | Social Media | `"$SPY If you're Bullish you want nasty, ove..."` | `0.162132` | `0.837779` | `0.000089` | **`+0.162043`** |
+| `2020-01-02` | `SPY` | News | `"'First five days' indicator, which has a solid..."` | `0.000000` | `1.000000` | `0.000000` | **`0.000000`** |
+| `2020-01-02` | `SPY` | News | `"Irrational exuberance? Why last year’s stellar..."` | `0.000097` | `0.012610` | `0.987293` | **`-0.987196`** |
+| `2020-01-02` | `SPY` | News | `"Is Google's P/E Ratio Too High Or Too Low?"` | `0.000282` | `0.000010` | `0.999708` | **`-0.999426`** |
+
+**2. Aggregated Daily Weighted Sentiment Output (`0.70 News / 0.30 Social Media`)** (from [`EDA2_sentiment_analysis.ipynb`](https://github.com/HengZhengKai/is424-data-mining-project/blob/main/news_social_media_data/EDA2_sentiment_analysis.ipynb) & [`AAPL_data_model_training.csv`](https://github.com/HengZhengKai/is424-data-mining-project/blob/main/training/data/AAPL_data_model_training.csv)):
+
+| `Date` | `Stock` | `Weighted Sentiment Score` (Daily Aggregated Output) |
+| :--- | :---: | :---: |
+| `2020-01-01` | `AAPL` | `0.656721` |
+| `2020-01-02` | `AAPL` | `0.714227` |
+| `2020-01-03` | `AAPL` | `0.654223` |
+| `2020-01-04` | `AAPL` | `0.698060` |
+| `2020-01-05` | `AAPL` | `0.619414` |
+
 ---
 
 ### Summary of All Sentiment Models Benchmarked
