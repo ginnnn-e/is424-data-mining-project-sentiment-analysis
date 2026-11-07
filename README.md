@@ -146,7 +146,8 @@ Before locking in **`yiyanghkust/finbert-tone`** as the final model, I evaluated
 
 In [`news_social_media_data/EDA_sentiment_analysis.ipynb`](https://github.com/HengZhengKai/is424-data-mining-project/blob/main/news_social_media_data/EDA_sentiment_analysis.ipynb) and [`news_social_media_data/EDA2_sentiment_analysis.ipynb`](https://github.com/HengZhengKai/is424-data-mining-project/blob/main/news_social_media_data/EDA2_sentiment_analysis.ipynb), I conducted text mining and distributional analysis across the **2,033,186** records and **9,135** aggregated daily stock-date observations:
 
-### Top News Publishers (out of 8,057 Sources)
+### Corpus Source & Publisher Distribution (out of 8,057 Sources)
+
 | Rank | Publisher Domain | Article Count |
 | :---: | :--- | :---: |
 | 1 | **Yahoo Finance** (`Yahoo`) | 23,780 |
@@ -155,14 +156,39 @@ In [`news_social_media_data/EDA_sentiment_analysis.ipynb`](https://github.com/He
 | 4 | **MarketWatch** (`Marketwatch`) | 7,355 |
 | 5 | **Bloomberg** (`Bloomberg.com`) | 4,522 |
 
+| Source Breakdown by Stock (`News` vs. `Social Media`) | Social Media Platform Breakdown |
+| :---: | :---: |
+| ![Sentiment Data Source Distribution by Stock](assets/source_distribution_by_stock.png) | ![Social Media Distribution](assets/social_media_distribution.png) |
+
+![Top 5 News Sources](assets/top_5_news_sources.png)
+
 ### Cross-Ticker Co-Occurrence & Bigram Themes
 * **Top Co-Occurring Stock Pairs:** Extracted cross-mentions across all 2.03M texts, revealing strong macro-tech coupling between `('AAPL', 'SPY')` (**111,111** co-mentions), `('AAPL', 'TSLA')` (**96,652**), `('SPY', 'TSLA')` (**43,051**), `('AAPL', 'NVDA')` (**30,376**), and `('NVDA', 'TSLA')` (**22,893**).
+
+![Top 5 Co-Occurring Stock Pairs](assets/top_co_occurring_pairs.png)
+
 * **Dominant Bigram Topics:** After HTML entity decoding, URL stripping, and custom financial stopword removal, bigram frequency and word-cloud analysis surfaced distinct narratives per ticker—such as *"price target"*, *"data center"*, and *"amd intc"* for **`NVDA`**, versus *"interest rates"*, *"dow jones"*, and *"price action"* for **`SPY`**.
+
+| AAPL Bigram Word Cloud | NVDA Bigram Word Cloud |
+| :---: | :---: |
+| ![AAPL Word Cloud](assets/wordcloud_aapl.png) | ![NVDA Word Cloud](assets/wordcloud_nvda.png) |
+| **TSLA Bigram Word Cloud** | **META Bigram Word Cloud** |
+| ![TSLA Word Cloud](assets/wordcloud_tsla.png) | ![META Word Cloud](assets/wordcloud_meta.png) |
+
+<p align="center">
+  <img src="assets/wordcloud_spy.png" alt="SPY Word Cloud" width="65%" />
+</p>
 
 ### Multi-Year Sentiment Regime Shifts (2020–2024)
 Analyzing the daily `weighted_sentiment` distributions (KDE plots and yearly trajectories) across the 5 core tickers captured clear macroeconomic regime changes:
 * **5-Year Mean Weighted Sentiment:** `META` (`0.725`), `SPY` (`0.712`), `TSLA` (`0.601`), `NVDA` (`0.565`), `AAPL` (`0.565`).
 * **2020–2021 Bull Market Optimism vs. 2022–2024 Compression:** Average sentiment peaked during the 2020–2021 liquidity expansion (e.g., `AAPL` at **`0.707`** and `TSLA` at **`0.723`** in 2021) before compressing sharply during the 2022–2024 inflation and rate-hike cycle (`AAPL` at **`0.455`** and `TSLA` at **`0.453`** in 2024).
+
+![Sentiment Score KDE per Stock](assets/sentiment_kde_per_stock.png)
+
+| Yearly Sentiment Trajectory (2020–2024) | 5-Year Average Sentiment per Stock |
+| :---: | :---: |
+| ![Yearly Sentiment Trends](assets/yearly_sentiment_trends.png) | ![Average Sentiment Score per Stock](assets/avg_sentiment_per_stock.png) |
 
 ---
 
