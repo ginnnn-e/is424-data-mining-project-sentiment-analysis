@@ -159,10 +159,22 @@ Before locking in **`yiyanghkust/finbert-tone`** as the final model, I evaluated
 
 | Model / Approach | Status | Notebook Reference | Why It Was Selected or Rejected |
 | :--- | :--- | :--- | :--- |
-| **`FinBERT-Tone` (`yiyanghkust/finbert-tone`)** | **FINAL MODEL USED** | [`financial-news-sentiment-analysis-finbert tone.ipynb`](https://github.com/HengZhengKai/is424-data-mining-project/blob/main/financial-news-sentiment-analysis-finbert%20tone.ipynb) | **Selected for final production:** Best balance of financial domain calibration (pretrained on 4.9B financial tokens) and inference speed across all 2.03M+ rows. |
-| **`FinBERT` (`ProsusAI/finbert`)** | Explored / Benchmarked | [`financial-news-sentiment-analysis-finbert.ipynb`](https://github.com/HengZhengKai/is424-data-mining-project/blob/main/financial-news-sentiment-analysis-finbert.ipynb) | Tested on sample/first-month slices; superseded by `yiyanghkust/finbert-tone`, which was trained on a much larger financial corpus and used for full 2020–2024 batch scoring. |
-| **Llama 3 / 3.1 / 3.2 (`1B`, `3B`, `8B` Instruct)** | Explored / Rejected | [`news_social_media_data/llama/`](https://github.com/HengZhengKai/is424-data-mining-project/tree/main/news_social_media_data/llama) | **Rejected for full-corpus batching:** `Meta-Llama-3-8B`, `Llama-3.1-8B-Instruct`, and `Llama-3.2-3B-Instruct` were prohibitively slow / exhausted GPU memory on 2M+ rows, while `Llama-3.2-1B` produced inconsistent outputs. |
+| **`FinBERT-Tone` (`yiyanghkust/finbert-tone`)** | **FINAL MODEL USED** | [`financial-news-sentiment-analysis-finbert tone.ipynb`](https://github.com/HengZhengKai/is424-data-mining-project/blob/main/financial-news-sentiment-analysis-finbert%20tone.ipynb) | **Selected for final production:** Best balance of financial domain calibration (pretrained on 4.9B financial tokens), deterministic outputs, and inference speed across all 2.03M+ rows. |
+| **`FinBERT` (`ProsusAI/finbert`)** | Explored / Benchmarked | [`financial-news-sentiment-analysis-finbert.ipynb`](https://github.com/HengZhengKai/is424-data-mining-project/blob/main/financial-news-sentiment-analysis-finbert.ipynb) | Benchmarked on the 32,228-row January 2020 slice; heavily biased toward `Neutral` (`0.71–0.92`) on informal retail posts compared to `yiyanghkust/finbert-tone`. |
+| **Llama 3 / 3.1 / 3.2 (`1B`, `3B`, `8B` Instruct)** | Explored / Rejected | [`news_social_media_data/llama/`](https://github.com/HengZhengKai/is424-data-mining-project/tree/main/news_social_media_data/llama) | **Rejected:** `Meta-Llama-3-8B` (16 GB shards), `Llama-3.1-8B-Instruct`, and `Llama-3.2-3B-Instruct` (6.4 GB) exhausted local memory / timed out, while `Llama-3.2-1B` produced contradictory scores across repeated runs on the exact same text. |
 | **VADER (`vaderSentiment`)** | Initial Baseline Only | `Colab_Wk3 Sentiment Analysis using VADER.ipynb` | **Rejected:** Rule/lexicon-based approach lacked financial context (e.g., misinterpreting financial terms and earnings jargon). |
+
+#### Head-to-Head Sentiment Benchmark on Identical Texts (`FinBERT-Tone` vs. `ProsusAI/finbert` vs. `Llama-3.2-1B`)
+
+To empirically compare model behavior before scaling to 2.03M rows, I ran **`yiyanghkust/finbert-tone`**, **`ProsusAI/finbert`**, and **3 independent runs of `meta-llama/Llama-3.2-1B`** on the exact same January 2020 `AAPL` slice ([`financial-news-sentiment-analysis-finbert.ipynb`](https://github.com/HengZhengKai/is424-data-mining-project/blob/main/financial-news-sentiment-analysis-finbert.ipynb) Cells 26 & 47; [`Llama_3_2_1B.ipynb`](https://github.com/HengZhengKai/is424-data-mining-project/blob/main/news_social_media_data/llama/%28inconsistent%2C%20bad%20outputs%29%20Llama_3_2_1B.ipynb) Cell 13):
+
+| Row | Text (`AAPL` — Jan 1, 2020) | `yiyanghkust/finbert-tone` Score ($P_{\text{pos}} - P_{\text{neg}}$) | `ProsusAI/finbert` Score ($P_{\text{pos}} - P_{\text{neg}}$) | `Llama-3.2-1B` Run 1 | `Llama-3.2-1B` Run 2 | `Llama-3.2-1B` Run 3 | Empirical Takeaway |
+| :---: | :--- | :---: | :---: | :---: | :---: | :---: | :--- |
+| `0` | `"$AAPL I jumped in on the AAPL 300 Jan 31 calls..."` | `0.000000` ($P_{\text{neu}}=1.000$) | `+0.191365` ($P_{\text{neu}}=0.717$) | `+0.925` | `+0.923` | `+0.965` | Options position disclosure without directional catalyst; `FinBERT` models stay neutral/mild. |
+| `1` | `"$AAPL they give him air time because 'bad news..."` | `+0.999725` ($P_{\text{pos}}=1.000$) | `-0.055783` ($P_{\text{neu}}=0.894$) | `0.000` | `-0.000` | `-0.436` | `Llama-3.2-1B` drifts from `0.000` to `-0.436` across runs. |
+| `2` | `"$AAPL $DIS I think I nailed this for 2019🤑"` | **`+0.998876`** ($P_{\text{pos}}=0.999$) | `+0.068295` ($P_{\text{neu}}=0.888$) | **`-0.999`** | **`-0.000`** | **`+0.939`** | `FinBERT-Tone` captures strong positive conviction (`+0.999`), whereas `Llama-3.2-1B` **flips completely from `-0.999` to `+0.939`** on identical input. |
+| `3` | `"$AAPL just bought new iPhone...2 hour free del..."` | `+0.000003` ($P_{\text{neu}}=1.000$) | `+0.145511` ($P_{\text{neu}}=0.828$) | **`-0.944`** | **`+0.909`** | **`-0.000`** | `Llama-3.2-1B` again flips sign (`-0.944` vs. `+0.909`) across runs. |
+| `4` | `"$AAPL I usually always buy at the wrong time s..."` | `+0.926194` ($P_{\text{pos}}=0.953$) | `-0.913828` ($P_{\text{neg}}=0.929$) | `-0.000` | `-0.999` | `-0.936` | Self-deprecating/sarcastic retail phrasing shows divergence between pretrained financial models. |
 
 ---
 
@@ -238,7 +250,58 @@ Once my pipeline produced the daily **`Weighted Sentiment Score`** (`news_sentim
      * **Tree & Ensemble Models:** Random Forest, XGBoost, LightGBM, Gradient Boosting, Decision Tree
      * **Linear, Kernel & Probabilistic Models:** Logistic Regression, SVM (RBF Kernel), Gaussian Naive Bayes
      * **Deep Learning:** 30-day lookback sequence **LSTM** (`PyTorch`)
-   * Across the 5 tickers and prediction horizons, the best horizon models achieved **out-of-sample Test ROC AUCs between 0.57 and 0.79**, driving non-overlapping Long/Short backtests with **10 bps (0.10%) round-trip transaction fees**.
+   * Across the 5 tickers and prediction horizons, the best horizon models achieved **out-of-sample Test ROC AUCs between 0.573 and 0.857**, driving non-overlapping Long/Short backtests with **10 bps (0.10%) round-trip transaction fees**.
+
+### Downstream Model Benchmarking Results (2024 Out-of-Sample Test Set)
+
+**1. Top Performing Model Configurations per Stock** (from [`training/Final_{STOCK}_model_training.ipynb`](https://github.com/HengZhengKai/is424-data-mining-project/tree/main/training) Cells 6, 19 & 25):
+
+| Stock | Price–Sentiment Correlation ($r$) | Best Horizon ($h$) | Selected Best Model | Optimal Return Threshold ($\text{th}$) | Train ROC AUC (2020–2023) | **Test ROC AUC (2024 Out-of-Sample)** | Test Accuracy | Backtest Highlights |
+| :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :--- |
+| **`META`** | `+0.0248` | 7-Day | **Logistic Regression** | `0.0425` (4.25%) | `0.6300` | **`0.8568`** | `73.53%` | Selected as best model across all 7 horizons (Avg Test AUC: `0.7866`). |
+| **`SPY`** | `+0.0436` | 3-Day / 10-Day | **Gradient Boosting** (3d) / **SVM** (10d) | `0.0375` / `0.0400` | `1.0000` / `0.3186` | **`0.8168`** (3d) / **`0.7722`** (10d) | `99.02%` / `88.24%` | `SVM` selected most frequently (2/4 horizons); Avg Test AUC across horizons: `0.7111`. |
+| **`AAPL`** | `-0.4653` | 8-Day (AUC) / 6-Day (Sharpe) | **LSTM** (8d) / **Naive Bayes** (6d) | `0.0400` (8d) / `0.0100` (6d) | `0.7556` / `0.6152` | **`0.6868`** (8d) / **`0.5907`** (6d) | `65.28%` / `61.76%` | **6-Day Naive Bayes achieved `1.531` Sharpe Ratio, `62.50%` Win Rate, and `+34.54%` Total Return** on 2024 test trades. |
+| **`NVDA`** | `-0.3361` | 9-Day | **Logistic Regression** | `0.0425` (4.25%) | `0.5899` | **`0.6555`** | `50.00%` | Selected across all 3 horizons (`8d`, `9d`, `10d`); 9-day horizon achieved **`+0.216` Sharpe Ratio** (`45.45%` Win Rate). |
+| **`TSLA`** | `+0.0492` | 10-Day / 9-Day | **SVM** (10d) / **Naive Bayes** (9d) | `0.0475` / `0.0450` | `0.7761` / `0.6915` | **`0.5735`** (10d) / **`0.5721`** (9d) | `53.92%` / `51.96%` | 10-day `SVM` achieved `50.00%` Win Rate (`+0.004` Sharpe Ratio). |
+
+**2. Model Family Generalization vs. Overfitting Benchmark (`AAPL` Across All 5 Horizons — Mean ± Std):**
+
+| Model Architecture | Train Accuracy (2020–2023) | Train ROC AUC (2020–2023) | Test Accuracy (2024) | **Test ROC AUC (2024)** | Generalization Takeaway |
+| :--- | :---: | :---: | :---: | :---: | :--- |
+| **LSTM (30-Day Sequence)** | `0.6641 ± 0.0765` | `0.7195 ± 0.0626` | `0.5028 ± 0.1624` | **`0.5824 ± 0.0988`** | **Best mean Test ROC AUC on `AAPL`**; selected 3/5 times (`4d`, `8d`, `10d`). |
+| **Gaussian Naive Bayes** | `0.6203 ± 0.0856` | `0.6415 ± 0.0245` | **`0.6235 ± 0.0685`** | **`0.5800 ± 0.0198`** | **Lowest overfitting gap (`0.0615` AUC diff)** and highest out-of-sample backtest returns (`+29.07%` at 5d, `+34.54%` at 6d). |
+| **Logistic Regression** | `0.6380 ± 0.0293` | `0.6635 ± 0.0245` | `0.5373 ± 0.1562` | `0.5268 ± 0.0447` | Stable linear baseline; top performer on `META` (`0.7866` mean Test AUC) and `NVDA` (`0.6453` mean Test AUC). |
+| **Random Forest** | `0.9565 ± 0.0269` | `0.9926 ± 0.0099` | `0.5725 ± 0.1249` | `0.5057 ± 0.0516` | High capacity caused severe train memorization (`~0.99` Train AUC vs. `~0.51` Test AUC). |
+| **Decision Tree** | `0.9195 ± 0.0346` | `0.9834 ± 0.0134` | `0.5667 ± 0.1121` | `0.4923 ± 0.0171` | Overfit to 2020–2023 regime. |
+| **Gradient Boosting** | `1.0000 ± 0.0000` | `1.0000 ± 0.0000` | `0.5843 ± 0.1291` | `0.4480 ± 0.0356` | Memorized training set (`1.000` Train AUC). |
+| **XGBoost** | `0.9965 ± 0.0014` | `1.0000 ± 0.0000` | `0.5706 ± 0.1013` | `0.4219 ± 0.0338` | Memorized training set (`1.000` Train AUC). |
+| **SVM (RBF Kernel)** | `0.6754 ± 0.0367` | `0.6973 ± 0.0256` | `0.5725 ± 0.1311` | `0.4074 ± 0.0958` | Stronger on `SPY` (`0.6045` mean Test AUC) and `TSLA` (`0.5154` mean Test AUC) than `AAPL`. |
+
+| AAPL Price vs. Daily Weighted Sentiment (`2020–2024`) | AAPL 9-Model Performance & Overfitting Analysis |
+| :---: | :---: |
+| ![AAPL Price vs Sentiment](assets/aapl_price_vs_sentiment.png) | ![AAPL Model Heatmap Analysis](assets/aapl_model_heatmap.png) |
+
+---
+
+## 6. Limitations & Future Improvements
+
+### Key Limitations Identified
+1. **Pretrained `FinBERT-Tone` Was Not Fine-Tuned on Retail Social Media Slang:**
+   * While `yiyanghkust/finbert-tone` was pretrained on 4.9B tokens of formal financial text (10-K/10-Q filings, earnings call transcripts, and analyst reports), we applied it in zero-shot inference mode without fine-tuning on our target social media corpus (`StockTwits`, `Reddit`, `Twitter/X`). As seen in our head-to-head benchmark (e.g., sarcastic retail posts like `"$AAPL I usually always buy at the wrong time..."` or options slang like `"0DTE SPY calls"`), formal financial models can misread informal retail sarcasm and emojis.
+2. **Heuristic `0.70 News / 0.30 Social Media` Weighting:**
+   * The `0.70` News and `0.30` Social Media weights in [`combine_sentiment_scores_per_date.ipynb`](https://github.com/HengZhengKai/is424-data-mining-project/blob/main/combine_sentiment_scores_per_date.ipynb) were chosen as a domain heuristic to prevent high-volume retail chatter (**1.84M+** StockTwits posts) from drowning out institutional news (**200k+** headlines), rather than being empirically optimized per ticker or market regime.
+3. **Contemporaneous Sentiment Does Not Automatically Imply Future Price Movement:**
+   * Direct Pearson correlations between daily `Close` price and `Weighted Sentiment Score` were weak or negative across the 5-year window (`AAPL`: `-0.4653`, `NVDA`: `-0.3361`, `META`: `+0.0248`, `SPY`: `+0.0436`, `TSLA`: `+0.0492`). As visible in the `AAPL` price-vs-sentiment chart above, stock prices trended upward in 2023–2024 even as average media sentiment compressed from `~0.71` (2021) to `~0.45` (2024)—demonstrating that public sentiment often acts as a lagging/reactive indicator or reflects macro wall-of-worry narratives already priced in by institutional participants.
+4. **Tree-Based Model Overfitting & Class Imbalance at Higher Return Thresholds:**
+   * High-capacity tree ensembles (`XGBoost`, `Gradient Boosting`, `Random Forest`) achieved `0.98–1.00` Train ROC AUC on `2020–2023` data but degraded to `0.42–0.54` Test ROC AUC on `2024` out-of-sample data, whereas simpler regularized models (`Logistic Regression`, `Naive Bayes`) and sequence models (`LSTM`) generalized significantly better. Additionally, at high return thresholds ($\text{th} \ge 0.04$), several models defaulted to predominantly `Short` (`pred = 0`) predictions during the strong 2024 bull market, resulting in high classification accuracy/AUC (e.g., `META` and `SPY`) but negative trading returns.
+
+### Potential Future Improvements
+* **Domain-Specific Fine-Tuning (LoRA / Supervised Adaptation):** Fine-tune `yiyanghkust/finbert-tone` (or a parameter-efficient LoRA adapter) using the **self-labeled `Bullish` / `Bearish` tags** already present in our `StockTwits` dataset (~828+ labeled rows per month) and headline-to-abnormal-return pairs so the model learns retail options jargon, sarcasm, and emojis.
+* **Controlled Ablation Studies:** Run systematic feature ablations comparing *(a) Technical Indicators Only*, *(b) Technical Indicators + News Sentiment Only*, *(c) Technical Indicators + Social Media Sentiment Only*, and *(d) Combined Weighted Sentiment* to quantify the exact marginal ROC AUC and Sharpe ratio lift attributable to each sentiment stream.
+* **Data-Driven & Decay-Based Aggregation Strategies:** Replace the static `0.70 / 0.30` daily mean with:
+  * **Grid-Searched or Learnable Source Weights** ($\alpha \in [0, 1]$ tuned via walk-forward cross-validation per stock),
+  * **Intraday Exponential Time-Decay** (weighting breaking pre-market/after-hours headlines more heavily than stale midday chatter), and
+  * **Sentiment Momentum & Dispersion Features** (adding rolling sentiment change $\Delta \text{Sentiment}_{t - k}$, sentiment z-scores, and intraday sentiment standard deviation to capture sudden narrative shifts rather than static levels).
 
 ---
 
