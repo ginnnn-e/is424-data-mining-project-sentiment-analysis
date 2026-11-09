@@ -123,11 +123,16 @@ The **final sentiment model used** to generate the `Weighted Sentiment Score` fe
    * $P(\text{Negative}_i)$ (`scores[2]`)
 3. **Continuous Row-Level Polarity Score:** Instead of taking a hard `argmax` label (which discards confidence), a continuous polarity score is computed for each record:
 
-   $$\text{Sentiment\_Score}_i = P(\text{Positive}_i) - P(\text{Negative}_i) \in [-1, 1]$$
+$$
+\text{Sentiment Score}_i = P(\text{Positive}_i) - P(\text{Negative}_i) \in [-1, 1]
+$$
 
 4. **Source-Weighted Daily Aggregation (`0.70 News / 0.30 Social Media`):** In [`combine_sentiment_scores_per_date.ipynb`](https://github.com/HengZhengKai/is424-data-mining-project/blob/main/combine_sentiment_scores_per_date.ipynb), records on each date $t$ for stock $s$ are assigned reliability weights ($w_{\text{News}} = 0.70$, $w_{\text{Social Media}} = 0.30$) so high-volume retail chatter does not drown out institutional journalism, and aggregated via a weighted average:
 
-   $$\text{Weighted Sentiment Score}_{s,t} = \frac{\sum_{i \in D_{s,t}} w_{\text{Type}(i)} \cdot \text{Sentiment\_Score}_i}{\sum_{i \in D_{s,t}} w_{\text{Type}(i)}}$$
+$$
+\text{Weighted Sentiment Score}_{s,t} = \frac{\sum_{i \in D_{s,t}} w_{\text{Type}(i)} \cdot \text{Sentiment Score}_i}{\sum_{i \in D_{s,t}} w_{\text{Type}(i)}}
+$$
+
 5. **Downstream Feature Integration:** The resulting daily series (`news_sentiment_finbert_tone_weighted_{stock}.csv`, **9,135 total stock-date rows**) is merged by `Date` directly into [`training/data/{STOCK}_data_model_training.csv`](https://github.com/HengZhengKai/is424-data-mining-project/tree/main/training/data) as the **`Weighted Sentiment Score`** feature alongside `Close` price and the 10 technical indicator combinations (`Combi 1` – `Combi 10`).
 
 #### Sample `FinBERT-Tone` Predictions (Actual Model Outputs)
